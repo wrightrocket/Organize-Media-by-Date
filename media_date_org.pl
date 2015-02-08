@@ -1,3 +1,4 @@
+[root@pound ~]# cat /usr/local/bin/media_date_org.pl
 #!/usr/bin/env perl
 #
 # By Keith Wright
@@ -532,7 +533,7 @@ sub print_arrays {
     my $chars = 0;
     print $message;
     if (scalar @_) {
-        for (@copies) {
+        for (@_) {
             $message .= "$_ ";
             $chars += length;
             if ($chars > $width) {
