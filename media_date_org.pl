@@ -30,7 +30,7 @@
 # Verbose output will be printed if $VERBOSE = 1, or -v option used
 # If -f <FROM_DIR> is used, then the <FROM_DIR> will be used as the $source_dir
 # If -t <TO_DIR> is used, then <TO_DIR> will be used as the $dest_dir
-#
+
 # use standard pragmas
 use warnings;
 use strict;
@@ -40,20 +40,20 @@ use feature "switch";
 
 # This program will not run with the standard perl distribution
 # Modules must be installed in order to run this program
-#
+
 # To install modules use the cpan command
 # or the package manager for your distribution
 # or the package manager for your operating system
-# 
+ 
 # In ActiveState Perl use the "ppm" command
 #
 # To learn more about these  modules search at: 
 # http://search.cpan.org/
-#
+
 # The following modules were not installed
 # by default and had to be installed as
 # a prerequisite to compile the other modules.
-#
+
 # They are not always part of a distribution.
 # Install these before the other modules.
 
@@ -235,6 +235,11 @@ sub process_file {
 	my $filepath = "$curdir/$file";
 	$filepath = qq("$filepath");
 	$DEBUG && print"Filepath: $filepath\n";
+	if (index($filepath, $dest_dir) > 0) {
+		print "NOT PROCESSING $dest_dir: It is the <TO_DIR>";
+		$PROGRESS && (!$VERBOSE) && print "d";
+		return 0; # skip the destination directory
+	}
 	my $size = (stat("$_"))[7] || (-s "$_") || 0;
 	$DEBUG && print"Filesize: $size\n";
 	if (-d "$_") {
@@ -291,7 +296,7 @@ sub get_date_and_copy {
 		# my $date = `exiftool -DateTimeOriginal "$file"`;
 		$date = $exifTool->GetValue('DateTimeOriginal');
 		$date = &fix_date($date);
-	 	$DEBUG || $VERBOSE && $date && print "FOUND: DateTimeOriginal of $date\n";
+	 	$DEBUG || $VERBOSE && $date && print "FOUND DateTimeOriginal: $date\n";
 	} else {
 	 	$DEBUG || $VERBOSE && $date && print "FOUND CreateDate: $date\n";
 	}
@@ -307,10 +312,10 @@ sub get_date_and_copy {
 				my $month = sprintf("%02d", $2);
 				my $day = sprintf("%02d", $3);
 				$date = "$1-$month-$day 00:00:00";
-				$DEBUG || $VERBOSE && $date && print "FOUND: Folder date: $date\n";
+				$DEBUG || $VERBOSE && $date && print "FOUND Folder date: $date\n";
 			} else { # Use FileModificationDate as final fallback way to determine date
 				$date = $exifTool->GetValue('FileModifyDate');
-				$DEBUG || $VERBOSE && $date && print "FOUND: File modification date: $date\n";
+				$DEBUG || $VERBOSE && $date && print "FOUND File modification date: $date\n";
 			}
 		}
 	}
