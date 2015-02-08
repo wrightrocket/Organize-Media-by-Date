@@ -13,7 +13,7 @@
 # and the second argument as the "to directory" <TO_DIR>
 #
 # The program then copies from the "from directory" to the "to directory" by
-# Organizing photos by year, month and day
+# Organizing media by year, month and day found and
 # Creates a directory for each year found
 # Creates a subdirectory for each month found
 # Creates a subdirectory for each day found
