@@ -2,8 +2,8 @@
 Organize your multimedia files by date.  <br>
 
 Creates a date organized structure under a "to directory" 
-by year/month/day/file by reading EXIF create date information, 
-the image created date, the folder date, or the modification date from the file.
+by year/month/day/file by reading EXIF create date information,
+the image created date, the folder date, or the modification date from the file.<br>
 
 By Keith Wright (keith.wright.rocket@gmail.com)
 Started: 2014/11/30
