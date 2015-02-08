@@ -331,7 +331,11 @@ sub fix_date {
 	$DEBUG && $date && print "\$date: $date\n";
 	if ($date) {
 		# Fix problem with date unknown
-		#      :   :       :   : 
+		if ($date =~ /unknown/) {
+			 $date = "2000/01/01 00:00:00";
+                }
+
+		# Fix problem with     :   :       :   : 
 		if ($date =~ /\s+:\s+:\s+:\s+:/	) {
 			$date = "2000/01/01 00:00:00";
 		}
@@ -522,24 +526,24 @@ sub print_extensions {
 
 sub print_arrays {
 	# first argument is the message
-	my $out = shift; 
-	my $width = 132; 
+	my $message = shift; 
+	my $width = 80; 
 	my $chars = 0;
-	print $out;
+	print $message;
 	if (scalar @_) {
 		for (@copies) {
-			$out .= "$_ ";
+			$message .= "$_ ";
 			$chars += length;
 			if ($chars > $width) {
-				$out .= "\n"; 
+				$message .= "\n"; 
 				$chars = 0;
 			}
 		}
-		$out .= "\n"; 
+		$message .= "\n"; 
 	} else {
-		$out = "None\n";
+		$message = "None\n";
 	}
-	return $out;
+	return $message;
 }
 
 sub final_report {
@@ -551,7 +555,6 @@ sub final_report {
 	}
 	$total_time = &time_total;
 	$report_title = "Report for organizing: " . $source_dir;
-#	print "\n\f"; # print a newline and a formfeed
 	$copies = &print_arrays("The following files were copied\n\n", @copies);
 	$errors = &print_arrays("The following files had copy errors\n\n", @errors);
 	$deleted = &print_arrays("The following files were deleted\n\n", @deleted);
@@ -598,30 +601,30 @@ Files with errors on copy: 	@>>>>>>>>>>
 End of processing summary
 
 
-@||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+@||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 				$report_title
 
-@||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+@||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 "Details about processing:"
 
 Files skipped: 
 
-   @<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+   @<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
    $skips
 
 Files copied: 			
 
-   @<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+   @<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
    $copies
 
 Files deleted: 			
 
-   @<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+   @<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
    $deleted
 
 Files with errors on copy: 	
 				
-   @<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+   @<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
    $errors
 .
 # End of STDOUT format
