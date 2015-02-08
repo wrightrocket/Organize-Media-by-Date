@@ -1,20 +1,19 @@
 # Organize-Media-by-Date
-<br>Organize your multimedia files by date.  <br>
+<h2>media_date_org.pl</h2>
+<br>Use this Perl script to organize your multimedia files by date.  <br>
 
 By Keith Wright (keith.wright.rocket@gmail.com) <br>
 Started: 2014/11/30 <br>
 Last Update: 2015/02/07 <br>
 
-Creates a date organized structure under a "to directory"  <br>
-by year/month/day/file by reading EXIF create date information, <br>
+This program creates a date organized structure under a "to directory"  <br>
+by year/month/day/ by reading EXIF information for create date information, <br>
 the image created date, the folder date, or the modification date from the file.<br>
 
-Below are some usefult comments from the top of the media_date_org.pl file  <br>
-Check your copy of the file for the most recent comments  <br>
+Below are some useful comments from the top of the media_date_org.pl file  <br>
+Check your copy of the media_date_org.pl for the most recent comments  <br>
 
-media_date_org.pl
-
-Program organizes files matching regular expressions found in the @regs array <br>
+The program organizes files matching regular expressions found in the @regs array <br>
 The default "from directory" is the current working directory <br>
 The default "to directory" is the "gallery" subdirectory <br>
 The program accepts the first argument as the "from directory" <FROM_DIR> <br>
