@@ -38,10 +38,10 @@ Removes "from file" if copied file is same size as "to file" if $REMOVE = 1, or 
 Verbose output will be printed if $VERBOSE = 1, or -v option used <br>
 If -f <FROM_DIR> is used, then the <FROM_DIR> will be used as the $source_dir <br>
 If -t <TO_DIR> is used, then <TO_DIR> will be used as the $dest_dir <br>
- <br>
+<pre>
 This program will not run with the standard perl distribution <br>
 Modules must be installed in order to run this program <br>
- <br>
+ 
 To install modules use the cpan command
 or the package manager for your distribution
 or the package manager for your operating system
@@ -180,3 +180,4 @@ my $report_title = ""; # the title used in the final report
 
 
 see the media_date_org.pl file for the code that executes
+</pre>
