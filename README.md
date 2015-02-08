@@ -1,47 +1,47 @@
 # Organize-Media-by-Date
-Organize your multimedia files by date.  <br>
+<br>Organize your multimedia files by date.  <br>
 
-Creates a date organized structure under a "to directory" 
-by year/month/day/file by reading EXIF create date information,
+By Keith Wright (keith.wright.rocket@gmail.com) <br>
+Started: 2014/11/30 <br>
+Last Update: 2015/02/07 <br>
+
+Creates a date organized structure under a "to directory"  <br>
+by year/month/day/file by reading EXIF create date information, <br>
 the image created date, the folder date, or the modification date from the file.<br>
 
-By Keith Wright (keith.wright.rocket@gmail.com)
-Started: 2014/11/30
-Last Update: 2015/02/07
-
-Below are the pertinent comments from the top of the media_date_org.pl file
-
+Below are some usefult comments from the top of the media_date_org.pl file  <br>
+Check your copy of the file for the most recent comments  <br>
 
 media_date_org.pl
 
-Program organizes files matching regular expressions found in the @regs array
-The default "from directory" is the current working directory
-The default "to directory" is the "gallery" subdirectory
-The program accepts the first argument as the "from directory" <FROM_DIR>
-and the second argument as the "to directory" <TO_DIR>
-
-The program then copies from the "from directory" to the "to directory" by
-Organizing photos by year, month and day
-Creates a directory for each year found
-Creates a subdirectory for each month found
-Creates a subdirectory for each day found
-Then, copies files to subdirectory by day found
-If the copy is the same size as original, it will be deleted if $REMOVE = 1, or -r is used
-
-The following options modify the default behavior of the program:
-
-Automates confirmation if $CONFIRM = 1, or -a option used
-Debugging information printed if $DEBUG = 1, or -d option used
-Overwrites "to file" with "from file" if $OVERWRITE = 1, or -o option used
-Progress codes are printed if $PROGRESS = 1, or -p option used
-Removes "from file" if copied file is same size as "to file" if $REMOVE = 1, or -r option used
-Verbose output will be printed if $VERBOSE = 1, or -v option used
-If -f <FROM_DIR> is used, then the <FROM_DIR> will be used as the $source_dir
-If -t <TO_DIR> is used, then <TO_DIR> will be used as the $dest_dir
-
-This program will not run with the standard perl distribution
-Modules must be installed in order to run this program
-
+Program organizes files matching regular expressions found in the @regs array <br>
+The default "from directory" is the current working directory <br>
+The default "to directory" is the "gallery" subdirectory <br>
+The program accepts the first argument as the "from directory" <FROM_DIR> <br>
+and the second argument as the "to directory" <TO_DIR> <br>
+ <br>
+The program then copies from the "from directory" to the "to directory" by <br>
+Organizing photos by year, month and day <br>
+Creates a directory for each year found <br>
+Creates a subdirectory for each month found <br>
+Creates a subdirectory for each day found <br>
+Then, copies files to subdirectory by day found <br>
+If the copy is the same size as original, it will be deleted if $REMOVE = 1, or -r is used <br>
+ <br>
+The following options modify the default behavior of the program: <br>
+ <br>
+Automates confirmation if $CONFIRM = 1, or -a option used <br>
+Debugging information printed if $DEBUG = 1, or -d option used <br>
+Overwrites "to file" with "from file" if $OVERWRITE = 1, or -o option used <br>
+Progress codes are printed if $PROGRESS = 1, or -p option used <br>
+Removes "from file" if copied file is same size as "to file" if $REMOVE = 1, or -r option used <br>
+Verbose output will be printed if $VERBOSE = 1, or -v option used <br>
+If -f <FROM_DIR> is used, then the <FROM_DIR> will be used as the $source_dir <br>
+If -t <TO_DIR> is used, then <TO_DIR> will be used as the $dest_dir <br>
+ <br>
+This program will not run with the standard perl distribution <br>
+Modules must be installed in order to run this program <br>
+ <br>
 To install modules use the cpan command
 or the package manager for your distribution
 or the package manager for your operating system
