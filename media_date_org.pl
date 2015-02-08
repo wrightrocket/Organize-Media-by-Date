@@ -1,4 +1,3 @@
-[root@pound ~]# cat /usr/local/bin/media_date_org.pl
 #!/usr/bin/env perl
 #
 # By Keith Wright
@@ -186,7 +185,7 @@ sub main {
     # the $source_dir and $dest_dir can be passed as arguments on the command line 
     if ($PROGRESS) { # to view progress only set $VERBOSE = 0 and $PROGRESS = 1
         print "\$PROGRESS is true, so the following will be output for each file:\n";
-        print "\td=directory, c=copy, s=skipped, r=removed, e=error, 0=zero sized file\n\n";
+        print "\td=directory, c=copied, s=skipped, r=removed, e=error, 0=zero sized file\n\n";
     }
     find(\&process_file, $source_dir); # find every file in the $source_dir and execute process_file 
     ($VERBOSE || $PROGRESS) && &final_report; # print a summary report if $VERBOSE or $PROGRESS
