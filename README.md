@@ -58,23 +58,23 @@ a prerequisite to compile the other modules.
 They are not always part of a distribution.
 Install these before the other modules.
 
-Module::Build;
-DateTime::Locale;
-DateTime::TimeZone;
-Params::Validate;
-Test::Fatal;
-Test::Warnings;
-Try::Tiny;
+use Module::Build;
+use DateTime::Locale;
+use DateTime::TimeZone;
+use Params::Validate;
+use Test::Fatal;
+use Test::Warnings;
+use Try::Tiny;
 
 These modules may also need to be installed
 They are the ones that are really used
 Install these after installing the above modules
 
-DateTime;
-File::Find qw(find);
-Image::EXIF::DateTime::Parser;
-Image::ExifTool qw(ImageInfo);
-Getopt::Easy;
+use DateTime;
+use File::Find qw(find);
+use Image::EXIF::DateTime::Parser;
+use Image::ExifTool qw(ImageInfo);
+use Getopt::Easy;
 
 These modules should be part of a standard distribution
 They probably will not need to be installed 
