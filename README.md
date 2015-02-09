@@ -5,6 +5,7 @@
 By Keith Wright (keith.wright.rocket@gmail.com) <br>
 Started: 2014/11/30 <br>
 Last Update: 2015/02/09 <br>
+<pre>
 #
 # media_date_org.pl
 #
@@ -172,3 +173,4 @@ my @skips = (); # the files that are skipped array
 my $skips = ""; # the files that are skipped scalar
 my $report_title = ""; # the title used in the final report
 my $exiftool = new Image::ExifTool; # create an instance of the exiftool
+</pre>
