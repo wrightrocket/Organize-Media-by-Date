@@ -2,7 +2,7 @@
 #
 # By Keith Wright
 # 2014/11/30
-# 2015/02/07
+# 2015/02/08
 #
 # media_date_org.pl
 #
@@ -83,6 +83,11 @@ use Cwd;
 use Data::Dumper;
 use File::Copy;
 
+# print the log of the arrays and the final report on a termination signal
+# or a stack trace if there is an error signal
+use sigtrap qw(handler term_handler normal-signals
+    stack-trace error-signals);
+
 # These variables can be set true or false (1 or 0)
 # They should be used with care, they all default to 0
 my $DEBUG = 0; # 1 to print debug output, 0 to not
@@ -92,6 +97,7 @@ my $PROGRESS = 0; # 1 to show progress, 0 to run silently except errors
 my $CONFIRM = 0; # 1 to automatically confirm, 0 to confirm before running
 my $OVERWRITE = 0; # 1 to overwrite destination files, 0 to skip
 my $REMOVE = 0; # 1 to delete original files, 0 to retain them
+my $LOG = 0; # 1 to log activity to $source_dir/media_date_org-<DATE_TIME>.log, 0 to not 
 
 # These variables set the default values if not passed as arguments
 # for the directories to copy from and to ($source_dir and $dest_dir)
@@ -99,32 +105,35 @@ my $curdir = &getcwd; # get the current working directory "."
 my $source_dir = $curdir; # use the current directory to process by default
 # $dest_dir is where the files will be copied and this directory will be excluded
 # my $dest_dir = $curdir/gallery"; # use ./gallery for subdirectories to create
-my $dest_dir = "$curdir/gallery/"; # hard-coded example
+my $dest_dir = "/nas/photos/gallery/"; # hard-coded example
 
 # Get the options from the command line and override the defaults
 
-get_options "a-automate d-debug o-overwrite p-progress r-remove v-verbose f-from= t-to=";
+get_options "a-automate d-debug l-log o-overwrite p-progress r-remove v-verbose f-from= t-to=";
 # Using get_options from the Getopts::Easy module populates %O from the command line
 # Set the variables according to the options passed on the command line:
 
-if ($O{progress}) {
-    $PROGRESS = 1;
+if ($O{automate}) {
+    $CONFIRM = 1;
 }
 if ($O{debug}) {
     $DEBUG = 1;
     $VERBOSE = 1;
 } 
-if ($O{verbose}) {
-    $VERBOSE = 1;
-}
-if ($O{automate}) {
-    $CONFIRM = 1;
+if ($O{log}) {
+    $LOG = 1;
 }
 if ($O{overwrite}) {
     $OVERWRITE = 1;
 }
+if ($O{progress}) {
+    $PROGRESS = 1;
+}
 if ($O{remove}) {
     $REMOVE = 1;
+}
+if ($O{verbose}) {
+    $VERBOSE = 1;
 }
 if ($O{from}) {
     $source_dir = $O{from};
@@ -136,6 +145,7 @@ if ($O{to}) {
 # These are the regular expressions that are currently available
 # This list is expanding over time
 my $avireg = qr/(\.avi$)/i; # regular expression to match avi files
+my $bmpreg = qr/(\.bmp$)/i; # regular expression to match bmp files
 my $dvreg = qr/(\.dv$)/i; # regular expression to match dv files
 my $flvreg = qr/(\.flv$)/i; # regular expression to match flv files
 my $gifreg = qr/(\.gif$)/i; # regular expression to match gif files
@@ -148,11 +158,15 @@ my $mp4reg = qr/(\.mp4$)/i; # regular expression to match mp4 files
 my $mpgreg = qr/(\.mpe?g$)/i; # regular expression to match mpeg/mpg files
 my $nefreg = qr/(\.nef$)/i; # regular expression to match Nikon raw nef files
 my $pngreg = qr/(\.png$)/i; # regular expression to match png files
+my $ppmreg = qr/(\.ppm$)/i; # regular expression to match ppm files
 my $threegpreg = qr/(\.3gp$)/i; # regular expression to match 3gp files
-my $vobreg = qr/(\.vob$)/i; # regular expression to match 3gp files
+my $tifreg = qr/(\.tif?f$)/i; # regular expression to match tif/tiff files
+my $vobreg = qr/(\.vob$)/i; # regular expression to match vob files
+my $wmvreg = qr/(\.wmv$)/i; # regular expression to match wmv files
 # Add your own regular expression above and then add it to the array below
-my @regs = ($jpgreg, $nefreg, $pngreg, $gifreg, $threegpreg, $avireg, 
-    $mpgreg, $m2vreg, $m4vreg, $mp4reg, $movreg, $modreg, $flvreg, $dvreg, $vobreg);
+my @regs = ($jpgreg, $nefreg, $pngreg, $gifreg, $threegpreg, $bmpreg,
+    $avireg, $ppmreg, $wmvreg, $mpgreg, $m2vreg, $m4vreg, $mp4reg, 
+    $tifreg, $movreg, $modreg, $flvreg, $dvreg, $vobreg);
 
 # These are the variables used for statistics in the "final_report" 
 my $files_processed = 0; # track total number of files
@@ -161,6 +175,7 @@ my $files_errors = 0; # track the number of files copied with errors
 my $files_skipped = 0; # track the number of files skipped
 my $files_deleted = 0; # track the number of files skipped
 my $size_copied = 0; # total size copied
+my $size_deleted = 0; # total size of files skipped
 my $size_skipped = 0; # total size of files skipped
 my $end_time = 0; # time when script finished 
 my $total_time = 0; # total time script ran 
@@ -189,12 +204,13 @@ sub main {
     }
     find(\&process_file, $source_dir); # find every file in the $source_dir and execute process_file 
     ($VERBOSE || $PROGRESS) && &final_report; # print a summary report if $VERBOSE or $PROGRESS
+    $LOG && &print_log; # log file activity 
 }
 
 sub check_argv {
-    $VERBOSE && print "Usage photo_date_org.pl [-adoprv] [-f 'from_dir'] [-t 'to_dir']  <FROM_DIR> <TO_DIR>\n";
+    $VERBOSE && print "Usage photo_date_org.pl [-adloprv] [-f 'from_dir'] [-t 'to_dir']  <FROM_DIR> <TO_DIR>\n";
     $VERBOSE && print "The following options can be used:\n";
-    $VERBOSE && print "a-automate d-debug o-overwrite p-progress r-remove v-verbose f-from <FROM_DIR> t-to <TO_DIR>\n\n";
+    $VERBOSE && print "a-automate d-debug l-log o-overwrite p-progress r-remove v-verbose f-from <FROM_DIR> t-to <TO_DIR>\n\n";
     $VERBOSE && print "The following defaults will be used:\n\n";
     if (@ARGV) {
         if ($ARGV[0] && $ARGV[1]) {
@@ -235,14 +251,13 @@ sub process_file {
     $DEBUG && print"Original file name: $_\n"; # $_ set by File::Find::name
     $_ = qq($_); # add double quotes for handling odd file names
     my $filepath = "$curdir/$file";
-    $filepath = qq("$filepath");
     $DEBUG && print"Filepath: $filepath\n";
     if (index($filepath, $dest_dir) > 0) {
         print "NOT PROCESSING $dest_dir: It is the <TO_DIR>";
         $PROGRESS && (!$VERBOSE) && print "d";
         return 0; # skip the destination directory
     }
-    my $size = (stat("$_"))[7] || (-s "$_") || 0;
+    my $size = (stat("$_"))[7] || 0;
     $DEBUG && print"Filesize: $size\n";
     if (-d "$_") {
         $VERBOSE && print "ENTERING directory: $file\n\n";
@@ -254,9 +269,10 @@ sub process_file {
         $files_skipped++;
         return 0; # Don't process empty files
     } 
-    $VERBOSE && print "PROCESSING source file: $file\n";
     $DEBUG && $PROGRESS && (!$VERBOSE) && print ".";
     $files_processed++; # track total number of files
+    $VERBOSE && print "PROCESSING file #$files_processed: $filepath\n";
+    $filepath = qq("$filepath"); # add double quotes for handling odd file names
     my $nomatch = 1; # Set this true here, and false if it doesn't match below
     for my $reg (@regs) { # use regular expressions in @regs to match file
         if ($_ =~ $reg) {
@@ -271,13 +287,13 @@ sub process_file {
         $files_skipped++;
         push @skips, $filepath;
         /.*\.(\w+)$/ ; # match the file name extension group
-        $VERBOSE && $1 && print "Bypassing unknown extension: $1\n\n";
+        $VERBOSE && $1 && print "BYPASSING unknown extension: $1\n\n";
         if ($1 && defined $extensions{$1}) { # increment the number found 
             $extensions{$1} = ++$extensions{$1};
         } elsif ($1) { # define the key and set the value to one for the first found
             $extensions{$1} = 1;
         } else {
-            $DEBUG && print "This is unexpected for $_\n\n";
+            $DEBUG && print "UNEXPECTED: This is unexpected for $_\n\n";
         }
     }
 }
@@ -421,44 +437,54 @@ sub make_dirs {
 sub copy_delete_file {
     my $source = shift;
     my $dest = shift;
+    $dest =~ s|/$||; # remove any trailing slash
     my $s_size = shift;
-    my $path = "$dest/$source";
+    my $path = "$dest/$_";
     my $filepath = $source;
     
-    if (-r $path) {
+    if (-r "$path") {
         $DEBUG && print"Path: $path\n";
-        my $size = (stat("$filepath"))[7] || 0;
-        $DEBUG && print"Size: $size\n";
-        my $d_size = ($size || (-s $path) || 0);
-        $VERBOSE && print "Comparing size of $path\n";
+        $DEBUG && print"Source Size: $s_size\n";
+        my $d_size = ((stat($path))[7] || 0);
+        $VERBOSE && print "COMPARING: Size of source $s_size and destination $d_size\n";
         if ($s_size == $d_size) {
                 if ($OVERWRITE) {
                     $VERBOSE && print "FILES ARE IDENTICAL: Copying as \$OVERWRITE is true\n";
-                &do_copy_delete_file($source, $dest, $s_size);
-            } else {
+                    &do_copy_delete_file($source, $dest, $s_size);
+                } else {
                     $VERBOSE && print "FILES ARE IDENTICAL: Skipping as \$OVERWRITE is false\n";
-                $PROGRESS && (!$VERBOSE) && print "s";
-                $files_skipped++;
-                $size_skipped += $s_size;
-                push @skips, $filepath;
+                    $PROGRESS && (!$VERBOSE) && print "s";
+                    $files_skipped++;
+                    $size_skipped += $s_size;
+                    push @skips, $filepath;
                 }   
-        } else { 
-                if ($OVERWRITE) {
-                    $VERBOSE && print "FILES ARE DIFFERENT SIZE: Copying as \$OVERWRITE is true\n";
+        } elsif ($s_size && !$d_size) {
+                $VERBOSE && print "COPYING FILE: Destination $path is size 0, overwriting empty file\n";
                 &do_copy_delete_file($source, $dest, $s_size);
+        } else {
+             
+            if ($OVERWRITE) {
+                    $VERBOSE && print "FILES ARE DIFFERENT SIZE: Copying as \$OVERWRITE is true\n";
+                    &do_copy_delete_file($source, $dest, $s_size);
             } else {
                     $VERBOSE && print "FILES ARE DIFFERENT SIZE: Skipping as \$OVERWRITE is false\n";
                 $PROGRESS && (!$VERBOSE) && print "s";
                 $files_skipped++;
                 $size_skipped += $s_size;
                 push @skips, $filepath;
-                }   
+            }   
         }
         if ($REMOVE) {
             if ($s_size = $d_size) {
                 $VERBOSE && print "DELETING: Deleting file as \$REMOVE is true, or -r option used\n";
-                unlink $source or warn "DELETE FAILED: Could not unlink $source: $!";
-                $VERBOSE && print "DELETED source file: copy is same size as original\n\n";
+                if (unlink "$_") {
+                    $VERBOSE && print "DELETED source file: copy is same size as original\n\n";
+                    $files_deleted++;
+                    $size_deleted += $s_size;
+                    push @deleted, "$source";
+                } else {
+                    warn "\nDELETE FAILED: Could not unlink $source: $!";
+                }
             } else {
                 $VERBOSE && print "RETAINING FILE: copy differs in size from original\n";
             }
@@ -467,6 +493,7 @@ sub copy_delete_file {
             
         }
     } else {
+        $VERBOSE && print "COPYING FILE: Destination $path does not exist\n";
         &do_copy_delete_file($filepath, $dest, $s_size)
     }
 }
@@ -475,38 +502,40 @@ sub do_copy_delete_file {
     my $source = shift;
     my $dest = shift;
     my $s_size = shift;
-    $source =~ s/"//g;
-    $VERBOSE && print "COPYING: $source to $dest\n";
-    if (copy($source, $dest)) {
+    $source =~ s/\/$//g;
+    if (copy($_, $dest)) {
+        $VERBOSE && print "COPIED $_ to: $dest\n";
         $size_copied += $s_size;
         $files_copied++;
         $PROGRESS && (!$VERBOSE) && print "c";
-        push @copies, "$dest/$source";
+        push @copies, ($source, "$dest");
         if ($REMOVE) {
-            my $size = (stat("$dest/$_"))[7] || (-s "$dest/$_") || 0;
+            my $size = (stat("$dest/$_"))[7] || 0;
             if ($s_size = $size) {
                 $VERBOSE && print "DELETING: Deleting file as \$REMOVE is true, or -r option used\n";
-                if (unlink $source) {
+                if (unlink $_) {
                     $VERBOSE && print "DELETED source file: copy is same size as original\n\n";
-                    push @deleted, "$dest/$source";
+                    $files_deleted++;
+                    $size_deleted += $size;
+                    push @deleted, "$source";
                     $PROGRESS && (!$VERBOSE) && print "r";
                 }
                 else { 
                     warn "DELETE FAILED: Could not unlink $source: $!";
-                    push @errors, "$dest/$source";
+                    push @errors, "$source";
                     $PROGRESS && (!$VERBOSE) && print "e";
                 }
-            } else {
+            }  else {
                 $VERBOSE && print "RETAINING FILE: copy differs in size from original\n\n";
             }
         } else {
                 $VERBOSE && print "RETAINING FILE: Retaining file as \$REMOVE is false\n\n";
         }
     } else {
-        warn "$/$_ $!\n"; 
+        warn "\n$/$_ $!\n"; 
         $files_errors++;
         $PROGRESS && (!$VERBOSE) && print "e";
-        push @errors, $source;
+        push @errors, "$source";
     }
 }
 
@@ -516,35 +545,71 @@ sub time_total {
 }
 
 sub print_extensions {
-    print "The following file extensions were not processed:\n";
+    print "\n\nThe following file extensions were not processed:\n";
     print "File Extension\t\tFiles Found\n\n";
     my $times = 1;
     for my $ext (keys %extensions) {
         $times = $extensions{$ext};
         print "\t$ext\t\t$times\t\n";
     }
+    print "\n\n";
 }
 
 sub print_arrays {
     # first argument is the message
     my $message = shift; 
-    my $width = 80; 
-    my $chars = 0;
-    print $message;
+    my $copy_flag = 0;
+    if ($message =~ /copied/) {
+        $copy_flag = 1;
+    }
     if (scalar @_) {
+        my $count = 0;
         for (@_) {
-            $message .= "$_ ";
-            $chars += length;
-            if ($chars > $width) {
-                $message .= "\n"; 
-                $chars = 0;
+            # print copies differently
+            if ($copy_flag) {
+                if (++$count % 2) {
+                    $message .= "From:\t$_\n";
+                } else {
+                    $message .= "To:\t$_\n";
+                }
+            } else { 
+            # print other arrays the same
+                 $message .= "$_\n";
             }
         }
-        $message .= "\n"; 
     } else {
-        $message = "None\n";
+        $message = "\tNone\n";
     }
+    $message .= "\n";
     return $message;
+}
+
+sub term_handler {
+    # This is called automatically on termination signals by using sigtrap
+    &final_report;
+    &print_log;
+    print "\n\nExiting\n";
+    exit;
+}
+
+sub print_log {
+    # This should be the last function to use, as it will exit the program
+    my  ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
+    $year += 1900;
+    $mon = sprintf("%02d", $mon);
+    $mday = sprintf("%02d", $mday);
+    $hour = sprintf("%02d", $hour);
+    $min = sprintf("%02d", $min);
+    $sec = sprintf("%02d", $sec);
+    
+    my $logfile = "$source_dir/media_date_org-$year-$mon-$mday-$hour-$min-$sec.log";
+    print "\n\nWriting log file $logfile\n";
+    open LOGFILE, ">$logfile" or die;
+    print LOGFILE $copies if $copies;
+    print LOGFILE $errors if $errors;
+    print LOGFILE $deleted if $deleted;
+    print LOGFILE $skips if $skips;
+    close LOGFILE;
 }
 
 sub final_report {
@@ -556,11 +621,19 @@ sub final_report {
     }
     $total_time = &time_total;
     $report_title = "Report for organizing: " . $source_dir;
-    $copies = &print_arrays("The following files were copied\n\n", @copies);
-    $errors = &print_arrays("The following files had copy errors\n\n", @errors);
-    $deleted = &print_arrays("The following files were deleted\n\n", @deleted);
-    $skips = print_arrays("The following files were skipped\n\n", @skips);
+    $size_copied = $size_copied / 1048576 if $size_copied;
+    $size_deleted = $size_deleted / 1048576 if $size_deleted;
+    $size_skipped = $size_skipped / 1048576 if $size_skipped;
+    $copies = &print_arrays("\nThe following files were copied\n\n", @copies);
+    $errors = &print_arrays("\nThe following files had copy errors\n\n", @errors);
+    $deleted = &print_arrays("\nThe following files were deleted\n\n", @deleted);
+    $skips = &print_arrays("\nThe following files were skipped\n\n", @skips);
     write STDOUT; # write directly to a format, although STDOUT is implied
+    $- = 0; # Start a new page
+    $^ = "SUMMARY_TOP"; # select new formats without having to open a file handle
+    $~ = "SUMMARY";
+    write;
+    &print_extensions;
 }
 
 format STDOUT_TOP =
@@ -568,38 +641,14 @@ format STDOUT_TOP =
 @||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
                                 $report_title
 
-                Page
+PAGE
+@####
+$%
 
-                @||||||
-                $%
 .
 # End of STDOUT_TOP format 
 
-
 format STDOUT =
-
-Time in seconds processing:     @>>>>>>>>>>
-                $total_time
-
-Files processed:        @>>>>>>>>>>
-                $files_processed
-
-Files skipped:          @>>>>>>>>>>
-                $files_skipped
-
-Size of files skipped:      @>>>>>>>>>>
-                $size_skipped
-
-Files copied:           @>>>>>>>>>>
-                $files_copied
-
-Size of files copied:       @>>>>>>>>>>
-                $size_copied
-       
-Files with errors on copy:  @>>>>>>>>>>
-                $files_errors
-
-End of processing summary
 
 
 @||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
@@ -610,22 +659,70 @@ End of processing summary
 
 Files skipped: 
 
-   @<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+   @*
    $skips
 
 Files copied:           
 
-   @<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+   @*
    $copies
 
 Files deleted:          
 
-   @<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+   @*
    $deleted
 
 Files with errors on copy:  
                 
-   @<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-   $errors
+   @*
+   $errors 
 .
 # End of STDOUT format
+
+format SUMMARY_TOP =
+# centered
+@||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+                                $report_title
+@||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+                                  "Summary" 
+
+PAGE
+@####
+$%
+.
+# End of SUMMARY_TOP format
+
+format SUMMARY =
+
+Time in seconds processing:     @>>>>>>>>>>
+                $total_time
+
+Files processed:                @>>>>>>>>>>
+                $files_processed
+
+Files skipped:                  @>>>>>>>>>>
+                $files_skipped
+
+Size of files skipped:          @#######.## MiB
+                $size_skipped
+
+Files copied:                   @>>>>>>>>>>
+                $files_copied
+
+Size of files copied:           @#######.## MiB
+                $size_copied
+       
+Files with errors on copy:      @>>>>>>>>>>
+                $files_errors
+
+Files deleted as identical:     @>>>>>>>>>>
+                $files_deleted
+
+Size of files deleted:          @#######.## MiB
+                $size_deleted
+       
+
+End of processing summary
+
+.
+# End of SUMMARY format
