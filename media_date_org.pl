@@ -108,11 +108,20 @@ my $source_dir = $curdir; # use the current directory to process by default
 my $dest_dir = "/nas/photos/gallery/"; # hard-coded example
 
 # Get the options from the command line and override the defaults
-
-get_options "a-automate d-debug l-log o-overwrite p-progress r-remove v-verbose f-from= t-to=";
+my $options = "a-automate d-debug h-help l-log o-overwrite p-progress r-remove v-verbose f-from= t-to=";
+get_options($options);
 # Using get_options from the Getopts::Easy module populates %O from the command line
 # Set the variables according to the options passed on the command line:
 
+if ($O{help}) {
+    my @words = split / /, $options;
+    print "Available options\n";
+    for my $word (@words) {
+        my @line = split /-/, $word;
+        print "-$line[0] for $line[1]\n";
+    }
+    exit
+}
 if ($O{automate}) {
     $CONFIRM = 1;
 }
