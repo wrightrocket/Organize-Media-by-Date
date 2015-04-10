@@ -114,13 +114,7 @@ get_options($options);
 # Set the variables according to the options passed on the command line:
 
 if ($O{help}) {
-    my @words = split / /, $options;
-    print "Available options\n";
-    for my $word (@words) {
-        my @line = split /-/, $word;
-        print "-$line[0] for $line[1]\n";
-    }
-    exit
+    &help;
 }
 if ($O{automate}) {
     $CONFIRM = 1;
@@ -202,6 +196,16 @@ my $exiftool = new Image::ExifTool; # create an instance of the exiftool
 
 
 &main(@ARGV); # Start the program by executing the main function
+
+sub help {
+    my @words = split / /, $options;
+    print "Available options\n";
+    for my $word (@words) {
+        my @line = split /-/, $word;
+        print "-$line[0] for $line[1]\n";
+    }
+    exit
+}
 
 sub main {
     $File::Find::dont_use_nlink=1; # always stat directories, so it works on all filesystems
