@@ -198,12 +198,14 @@ my $exiftool = new Image::ExifTool; # create an instance of the exiftool
 &main(@ARGV); # Start the program by executing the main function
 
 sub help {
+    print "\nUsage media_date_org.pl [-adhloprvft] [from_directory] [to_directory]\n";
+    print "\nAvailable options\n";
     my @words = split / /, $options;
-    print "Available options\n";
     for my $word (@words) {
         my @line = split /-/, $word;
         print "-$line[0] for $line[1]\n";
     }
+    print "\n";
     exit
 }
 
