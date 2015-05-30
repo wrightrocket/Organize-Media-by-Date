@@ -22,6 +22,7 @@
 #
 # The following options modify the default behavior of the program:
 #
+# To print out help use the -h option
 # Automates confirmation if $CONFIRM = 1, or -a option used
 # Debugging information printed if $DEBUG = 1, or -d option used
 # Overwrites "to file" with "from file" if $OVERWRITE = 1, or -o option used
@@ -192,6 +193,7 @@ my $errors = ""; # the files with errors in the errors scalar
 my @skips = (); # the files that are skipped array
 my $skips = ""; # the files that are skipped scalar
 my $report_title = ""; # the title used in the final report
+
 my $exiftool = new Image::ExifTool; # create an instance of the exiftool
 
 
@@ -282,6 +284,7 @@ sub process_file {
         $VERBOSE && print "SKIPPING empty file: $file\n\n"; # if the file has a size of zero
         $PROGRESS && (!$VERBOSE) && print "0";
         $files_skipped++;
+        push @skips, $filepath;
         return 0; # Don't process empty files
     } 
     $DEBUG && $PROGRESS && (!$VERBOSE) && print ".";
@@ -496,6 +499,7 @@ sub copy_delete_file {
                     $VERBOSE && print "DELETED source file: copy is same size as original\n\n";
                     $files_deleted++;
                     $size_deleted += $s_size;
+                    $PROGRESS && (!$VERBOSE) && print "r";
                     push @deleted, "$source";
                 } else {
                     warn "\nDELETE FAILED: Could not unlink $source: $!";
@@ -523,7 +527,7 @@ sub do_copy_delete_file {
         $size_copied += $s_size;
         $files_copied++;
         $PROGRESS && (!$VERBOSE) && print "c";
-        push @copies, ($source, "$dest");
+        push @copies, ($source, $dest);
         if ($REMOVE) {
             my $size = (stat("$dest/$_"))[7] || 0;
             if ($s_size = $size) {
