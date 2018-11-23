@@ -106,7 +106,7 @@ my $curdir = &getcwd; # get the current working directory "."
 my $source_dir = $curdir; # use the current directory to process by default
 # $dest_dir is where the files will be copied and this directory will be excluded
 # my $dest_dir = $curdir/gallery"; # use ./gallery for subdirectories to create
-my $dest_dir = "/nas/photos/gallery/"; # hard-coded example
+my $dest_dir = "/ztank/gallery/"; # hard-coded example
 
 # Get the options from the command line and override the defaults
 my $options = "a-automate d-debug h-help l-log o-overwrite p-progress r-remove v-verbose f-from= t-to=";
